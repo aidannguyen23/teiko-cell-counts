@@ -1,8 +1,5 @@
-"""Part 1: build the SQLite database from cell-count.csv.
-
-Run with:  python load_data.py
-Creates teiko.db in the repository root (re-running rebuilds it from scratch).
-"""
+# part 1 - loads cell-count.csv into teiko.db
+# just run: python load_data.py  (rebuilds the db every time)
 
 import csv
 import sqlite3
@@ -21,13 +18,11 @@ DROP TABLE IF EXISTS samples;
 DROP TABLE IF EXISTS subjects;
 DROP TABLE IF EXISTS projects;
 
--- One row per project.
 CREATE TABLE projects (
     project_id TEXT PRIMARY KEY
 );
 
--- One row per patient. These attributes never change between a subject's samples,
--- so storing them here (not on every sample) avoids repetition and inconsistency.
+-- subject info doesnt change between samples so its stored once here
 CREATE TABLE subjects (
     subject_id TEXT PRIMARY KEY,
     project_id TEXT NOT NULL REFERENCES projects(project_id),
@@ -35,10 +30,10 @@ CREATE TABLE subjects (
     age        INTEGER,
     sex        TEXT CHECK (sex IN ('M', 'F')),
     treatment  TEXT NOT NULL,
-    response   TEXT CHECK (response IN ('yes', 'no'))  -- NULL for untreated/healthy
+    response   TEXT CHECK (response IN ('yes', 'no'))  -- null for healthy
 );
 
--- One row per biological sample (a subject is sampled at several timepoints).
+-- each subject has multiple samples (diff timepoints)
 CREATE TABLE samples (
     sample_id                 TEXT PRIMARY KEY,
     subject_id                TEXT NOT NULL REFERENCES subjects(subject_id),
@@ -46,8 +41,7 @@ CREATE TABLE samples (
     time_from_treatment_start INTEGER NOT NULL
 );
 
--- Long format: one row per (sample, population). Adding a new population later
--- means inserting rows, not altering the table.
+-- long format so adding a new population is just more rows
 CREATE TABLE cell_counts (
     sample_id  TEXT NOT NULL REFERENCES samples(sample_id),
     population TEXT NOT NULL,
@@ -59,7 +53,7 @@ CREATE INDEX idx_subjects_filters ON subjects(condition, treatment, response, se
 CREATE INDEX idx_samples_subject  ON samples(subject_id);
 CREATE INDEX idx_samples_filters  ON samples(sample_type, time_from_treatment_start);
 
--- Part 2 summary table, computed by the database on demand.
+-- part 2 table
 CREATE VIEW sample_frequencies AS
 SELECT
     sample_id                                                 AS sample,
@@ -82,7 +76,7 @@ def main(csv_path: Path = CSV_PATH, db_path: Path = DB_PATH) -> None:
             r["subject"], r["project"], r["condition"], int(r["age"]),
             r["sex"], r["treatment"], r["response"] or None,
         )
-        # Guard the normalization assumption: a subject's attributes must agree across rows.
+        # make sure subject info is actually the same across their rows
         if subjects.setdefault(r["subject"], subject) != subject:
             raise ValueError(f"Inconsistent attributes for subject {r['subject']}")
         samples.append((
@@ -94,7 +88,7 @@ def main(csv_path: Path = CSV_PATH, db_path: Path = DB_PATH) -> None:
     try:
         conn.execute("PRAGMA foreign_keys = ON")
         conn.executescript(SCHEMA)
-        with conn:  # one transaction for all inserts
+        with conn:
             conn.executemany("INSERT INTO projects VALUES (?)", [(p,) for p in sorted(projects)])
             conn.executemany("INSERT INTO subjects VALUES (?, ?, ?, ?, ?, ?, ?)", subjects.values())
             conn.executemany("INSERT INTO samples VALUES (?, ?, ?, ?)", samples)
