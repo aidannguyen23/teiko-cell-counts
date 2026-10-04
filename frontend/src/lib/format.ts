@@ -14,7 +14,8 @@ export const COLORS = {
   nonResponder: '#eb6834',
   accent: '#2a78d6',
   ink: '#0b0b0b',
-  muted: '#898781',
+  muted: '#898781', // lines only, too light for text
+  axisText: '#5c5b57',
   grid: '#e1e0d9',
 }
 

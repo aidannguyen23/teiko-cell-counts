@@ -7,6 +7,7 @@ type Props = {
   data: Plotly.Data[]
   layout?: Partial<Plotly.Layout>
   className?: string
+  label: string // read out by screen readers since the chart itself isnt accessible
 }
 
 const baseLayout: Partial<Plotly.Layout> = {
@@ -18,10 +19,10 @@ const baseLayout: Partial<Plotly.Layout> = {
   legend: { orientation: 'h', y: 1.12, x: 0 },
 }
 
-const axis = { gridcolor: COLORS.grid, zerolinecolor: COLORS.grid, linecolor: COLORS.grid, tickfont: { color: COLORS.muted } }
+const axis = { gridcolor: COLORS.grid, zerolinecolor: COLORS.grid, linecolor: COLORS.grid, tickfont: { color: COLORS.axisText } }
 
 // small wrapper around plotly so we dont need react-plotly.js
-export function Plot({ data, layout, className }: Props) {
+export function Plot({ data, layout, className, label }: Props) {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -46,5 +47,5 @@ export function Plot({ data, layout, className }: Props) {
     }
   }, [])
 
-  return <div ref={ref} className={className} />
+  return <div ref={ref} role="img" aria-label={label} className={className} />
 }

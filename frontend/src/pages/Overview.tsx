@@ -11,7 +11,7 @@ import {
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, Download, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
-import { ErrorNote, PageHeader } from '@/components/Layout'
+import { ErrorNote, PageHeader, usePageTitle } from '@/components/Layout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -74,6 +74,14 @@ export default function Overview() {
   const [sorting, setSorting] = useState<SortingState>([])
   const [search, setSearch] = useState('')
   const [population, setPopulation] = useState('all')
+  usePageTitle('Overview')
+
+  // has to be memoized. a new array every render makes the table think the filter
+  // changed -> it resets the page -> rerender -> loop (this broke page navigation)
+  const columnFilters = useMemo(
+    () => (population === 'all' ? [] : [{ id: 'population', value: population }]),
+    [population],
+  )
 
   const table = useReactTable({
     data: rows,
@@ -81,7 +89,7 @@ export default function Overview() {
     state: {
       sorting,
       globalFilter: search,
-      columnFilters: population === 'all' ? [] : [{ id: 'population', value: population }],
+      columnFilters,
     },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
@@ -107,9 +115,11 @@ export default function Overview() {
         <CardContent className="space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="relative flex-1">
-              <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Search aria-hidden className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="search sample id…"
+                type="search"
+                aria-label="Search by sample id"
+                placeholder="search sample id"
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value)
@@ -125,7 +135,7 @@ export default function Overview() {
                 table.setPageIndex(0)
               }}
             >
-              <SelectTrigger className="w-full sm:w-48">
+              <SelectTrigger aria-label="Filter by population" className="w-full sm:w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -142,13 +152,16 @@ export default function Overview() {
               disabled={!filtered.length}
               onClick={() => download('cell_frequencies.csv', toCsv(filtered.map((r) => r.original)))}
             >
-              <Download />
+              <Download aria-hidden />
               Export CSV
             </Button>
           </div>
 
           <div className="overflow-x-auto rounded-lg border">
             <Table>
+              <caption className="sr-only">
+                cell population frequencies per sample. column headers are buttons that sort the table
+              </caption>
               <TableHeader>
                 {table.getHeaderGroups().map((hg) => (
                   <TableRow key={hg.id} className="bg-muted/50 hover:bg-muted/50">
@@ -157,13 +170,17 @@ export default function Overview() {
                       const Icon = sorted === 'asc' ? ArrowUp : sorted === 'desc' ? ArrowDown : ArrowUpDown
                       const numeric = (h.column.columnDef.meta as { numeric?: boolean })?.numeric
                       return (
-                        <TableHead key={h.id} className={numeric ? 'text-right' : ''}>
+                        <TableHead
+                          key={h.id}
+                          aria-sort={sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : 'none'}
+                          className={numeric ? 'text-right' : ''}
+                        >
                           <button
                             onClick={h.column.getToggleSortingHandler()}
-                            className="inline-flex items-center gap-1.5 hover:text-foreground"
+                            className="inline-flex items-center gap-1.5 rounded-sm hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
                           >
                             {flexRender(h.column.columnDef.header, h.getContext())}
-                            <Icon className={`size-3.5 ${sorted ? 'text-primary' : 'text-muted-foreground/60'}`} />
+                            <Icon aria-hidden className={`size-3.5 ${sorted ? 'text-primary' : 'text-muted-foreground'}`} />
                           </button>
                         </TableHead>
                       )
@@ -207,14 +224,14 @@ export default function Overview() {
           </div>
 
           <div className="flex flex-col items-center justify-between gap-3 text-sm text-muted-foreground sm:flex-row">
-            <span>
+            <span aria-live="polite">
               {filtered.length
-                ? `${fmtInt(pageIndex * pageSize + 1)}–${fmtInt(Math.min((pageIndex + 1) * pageSize, filtered.length))} of ${fmtInt(filtered.length)} rows`
+                ? `${fmtInt(pageIndex * pageSize + 1)} to ${fmtInt(Math.min((pageIndex + 1) * pageSize, filtered.length))} of ${fmtInt(filtered.length)} rows`
                 : '0 rows'}
             </span>
             <div className="flex items-center gap-2">
               <Select value={String(pageSize)} onValueChange={(v) => table.setPageSize(Number(v))}>
-                <SelectTrigger size="sm" className="w-28">
+                <SelectTrigger size="sm" aria-label="Rows per page" className="w-28">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -225,14 +242,26 @@ export default function Overview() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button variant="outline" size="icon-sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
-                <ChevronLeft />
+              <Button
+                variant="outline"
+                size="icon-sm"
+                aria-label="Previous page"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+              >
+                <ChevronLeft aria-hidden />
               </Button>
               <span className="tabular-nums">
-                {pageIndex + 1} / {Math.max(table.getPageCount(), 1)}
+                page {pageIndex + 1} of {Math.max(table.getPageCount(), 1)}
               </span>
-              <Button variant="outline" size="icon-sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
-                <ChevronRight />
+              <Button
+                variant="outline"
+                size="icon-sm"
+                aria-label="Next page"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+              >
+                <ChevronRight aria-hidden />
               </Button>
             </div>
           </div>

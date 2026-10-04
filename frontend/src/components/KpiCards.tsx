@@ -6,7 +6,7 @@ import { fmtInt } from '@/lib/format'
 const ITEMS: { key: keyof Kpis; label: string; note: string }[] = [
   { key: 'samples', label: 'Samples', note: 'all sample types + timepoints' },
   { key: 'subjects', label: 'Subjects', note: 'unique patients' },
-  { key: 'projects', label: 'Projects', note: 'prj1 – prj3' },
+  { key: 'projects', label: 'Projects', note: 'prj1, prj2, prj3' },
   { key: 'responders', label: 'Responders', note: 'subjects w/ response = yes' },
 ]
 
@@ -15,7 +15,7 @@ export function KpiCards() {
   if (error) return null
 
   return (
-    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <section aria-label="Key numbers" className="grid grid-cols-2 gap-4 lg:grid-cols-4">
       {ITEMS.map(({ key, label, note }) => (
         <Card key={key} size="sm">
           <CardHeader>
@@ -27,6 +27,6 @@ export function KpiCards() {
           <CardContent className="text-xs text-muted-foreground">{note}</CardContent>
         </Card>
       ))}
-    </div>
+    </section>
   )
 }

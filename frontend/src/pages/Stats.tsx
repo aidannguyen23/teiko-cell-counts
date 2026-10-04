@@ -1,7 +1,7 @@
 import { ChevronDown } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
-import { ErrorNote, PageHeader } from '@/components/Layout'
+import { ErrorNote, PageHeader, usePageTitle } from '@/components/Layout'
 import { Plot } from '@/components/Plot'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -35,10 +35,10 @@ function Legend() {
   return (
     <div className="flex items-center gap-4 text-sm text-muted-foreground">
       <span className="flex items-center gap-1.5">
-        <span className="size-2.5 rounded-sm" style={{ background: COLORS.responder }} /> Responders
+        <span aria-hidden className="size-2.5 rounded-sm" style={{ background: COLORS.responder }} /> Responders
       </span>
       <span className="flex items-center gap-1.5">
-        <span className="size-2.5 rounded-sm" style={{ background: COLORS.nonResponder }} /> Non-responders
+        <span aria-hidden className="size-2.5 rounded-sm" style={{ background: COLORS.nonResponder }} /> Non-responders
       </span>
     </div>
   )
@@ -52,7 +52,9 @@ function Boxplots({ rows, stats }: { rows: BoxplotRow[]; stats: StatsRow[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Responders vs non-responders</CardTitle>
+        <CardTitle>
+          <h2>Responders vs non-responders</h2>
+        </CardTitle>
         <CardDescription>
           relative frequency of each population. melanoma patients on miraclib, PBMC samples only
         </CardDescription>
@@ -61,7 +63,7 @@ function Boxplots({ rows, stats }: { rows: BoxplotRow[]; stats: StatsRow[] }) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Legend />
           <Tabs value={unit} onValueChange={(v) => setUnit(v as 'sample' | 'subject')}>
-            <TabsList>
+            <TabsList aria-label="Plot unit">
               <TabsTrigger value="sample">Per sample</TabsTrigger>
               <TabsTrigger value="subject">Per subject (mean)</TabsTrigger>
             </TabsList>
@@ -82,7 +84,7 @@ function Boxplots({ rows, stats }: { rows: BoxplotRow[]; stats: StatsRow[] }) {
             return (
               <div key={pop} className="rounded-lg border bg-card p-3">
                 <div className="flex items-center justify-between px-1">
-                  <p className="text-sm font-medium">{POP_LABELS[pop]}</p>
+                  <h3 className="text-sm font-medium">{POP_LABELS[pop]}</h3>
                   {s && (
                     <span className={`text-xs tabular-nums ${s.significant ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
                       q = {fmtP(s.q_value)}
@@ -91,6 +93,7 @@ function Boxplots({ rows, stats }: { rows: BoxplotRow[]; stats: StatsRow[] }) {
                 </div>
                 <Plot
                   className="h-64"
+                  label={`boxplot of ${POP_LABELS[pop]} percentage, responders vs non-responders${s ? `, q = ${fmtP(s.q_value)}` : ''}. exact numbers are in the results table below`}
                   data={data}
                   layout={{
                     showlegend: false,
@@ -111,7 +114,9 @@ function StatsTable({ stats }: { stats: StatsRow[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Test results</CardTitle>
+        <CardTitle>
+          <h2>Test results</h2>
+        </CardTitle>
         <CardDescription>
           difference = responders minus non-responders (percentage points) from the mixed model. highlighted rows are
           significant after BH correction (q &lt; 0.05)
@@ -120,6 +125,7 @@ function StatsTable({ stats }: { stats: StatsRow[] }) {
       <CardContent>
         <div className="overflow-x-auto rounded-lg border">
           <Table>
+            <caption className="sr-only">mixed model results per population</caption>
             <TableHeader>
               <TableRow className="bg-muted/50 hover:bg-muted/50">
                 <TableHead>Population</TableHead>
@@ -129,7 +135,9 @@ function StatsTable({ stats }: { stats: StatsRow[] }) {
                 <TableHead className="text-right">p</TableHead>
                 <TableHead className="text-right">q (BH)</TableHead>
                 <TableHead className="text-right">MWU q</TableHead>
-                <TableHead />
+                <TableHead>
+                  <span className="sr-only">Result</span>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -150,7 +158,7 @@ function StatsTable({ stats }: { stats: StatsRow[] }) {
                     {fmtP(s.q_value)}
                   </TableCell>
                   <TableCell className="text-right tabular-nums text-muted-foreground">{fmtP(s.mwu_q_value)}</TableCell>
-                  <TableCell>{s.significant ? <Badge>significant</Badge> : <Badge variant="outline">n.s.</Badge>}</TableCell>
+                  <TableCell>{s.significant ? <Badge>significant</Badge> : <Badge variant="outline">not significant</Badge>}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -190,18 +198,18 @@ function Diagnostics({ rows }: { rows: DiagnosticRow[] }) {
     <Collapsible open={open} onOpenChange={setOpen}>
       <Card>
         <CollapsibleTrigger asChild>
-          <button className="flex w-full items-center justify-between px-4 text-left">
+          <button className="flex w-full items-center justify-between rounded-md px-4 text-left focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
             <div>
-              <p className="font-medium">Model diagnostics</p>
+              <h2 className="font-medium">Model diagnostics</h2>
               <p className="text-sm text-muted-foreground">residual QQ plot + residuals vs fitted, to check the normality assumption</p>
             </div>
-            <ChevronDown className={`size-4 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
+            <ChevronDown aria-hidden className={`size-4 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent>
           <CardContent className="space-y-4 pt-2">
             <Select value={pop} onValueChange={setPop}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger aria-label="Population for diagnostics" className="w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -215,17 +223,19 @@ function Diagnostics({ rows }: { rows: DiagnosticRow[] }) {
             {open && (
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-lg border p-3">
-                  <p className="px-1 text-sm font-medium">Normal QQ</p>
+                  <h3 className="px-1 text-sm font-medium">Normal QQ</h3>
                   <Plot
                     className="h-72"
+                    label={`normal QQ plot of ${POP_LABELS[pop]} model residuals`}
                     data={plots.qq}
                     layout={{ showlegend: false, xaxis: { title: { text: 'theoretical quantile' } }, yaxis: { title: { text: 'residual' } } }}
                   />
                 </div>
                 <div className="rounded-lg border p-3">
-                  <p className="px-1 text-sm font-medium">Residuals vs fitted</p>
+                  <h3 className="px-1 text-sm font-medium">Residuals vs fitted</h3>
                   <Plot
                     className="h-72"
+                    label={`residuals vs fitted values for the ${POP_LABELS[pop]} model`}
                     data={plots.rvf}
                     layout={{ showlegend: false, xaxis: { title: { text: 'fitted %' } }, yaxis: { title: { text: 'residual' } } }}
                   />
@@ -245,7 +255,9 @@ function Methods({ stats }: { stats: StatsRow[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Methods + caveats</CardTitle>
+        <CardTitle>
+          <h2>Methods + caveats</h2>
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-sm leading-relaxed text-muted-foreground">
         <p>
@@ -286,6 +298,7 @@ export default function Stats() {
   const error = stats.error ?? box.error ?? diag.error
 
   const sig = stats.data?.filter((s) => s.significant) ?? []
+  usePageTitle('Statistical analysis')
 
   return (
     <section className="space-y-6">

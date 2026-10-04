@@ -1,4 +1,4 @@
-import { ErrorNote, PageHeader } from '@/components/Layout'
+import { ErrorNote, PageHeader, usePageTitle } from '@/components/Layout'
 import { Plot } from '@/components/Plot'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -17,13 +17,15 @@ function CountCard({ title, unit, rows, total }: { title: string; unit: string; 
   return (
     <Card>
       <CardHeader>
-        <CardDescription>{title}</CardDescription>
+        <CardDescription>
+          <h2>{title}</h2>
+        </CardDescription>
         <div className="flex flex-wrap gap-x-6 gap-y-2 pt-1">
           {rows.map((r, i) => (
             <div key={r.label}>
               <p className="text-2xl font-semibold tabular-nums">{fmtInt(r.n)}</p>
               <p className="text-xs text-muted-foreground">
-                {labels[i]} · {((100 * r.n) / total).toFixed(1)}%
+                {labels[i]} ({((100 * r.n) / total).toFixed(1)}%)
               </p>
             </div>
           ))}
@@ -32,6 +34,7 @@ function CountCard({ title, unit, rows, total }: { title: string; unit: string; 
       <CardContent>
         <Plot
           className="h-28"
+          label={`bar chart of ${title.toLowerCase()}: ${rows.map((r, i) => `${labels[i]} ${r.n}`).join(', ')}`}
           data={[
             {
               type: 'bar',
@@ -43,7 +46,7 @@ function CountCard({ title, unit, rows, total }: { title: string; unit: string; 
               text: rows.map((r) => fmtInt(r.n)),
               textposition: 'outside',
               cliponaxis: false,
-              textfont: { color: COLORS.muted },
+              textfont: { color: COLORS.axisText },
               hovertemplate: `%{y}: %{x} ${unit}<extra></extra>`,
             },
           ]}
@@ -62,6 +65,7 @@ function CountCard({ title, unit, rows, total }: { title: string; unit: string; 
 
 export default function Baseline() {
   const { data, error } = useApi<BaselineData>('/api/baseline')
+  usePageTitle('Baseline subset')
 
   return (
     <section className="space-y-6">
@@ -96,7 +100,9 @@ export default function Baseline() {
 
           <Card className="border-l-4 border-l-primary">
             <CardHeader>
-              <CardDescription>Average B cell count</CardDescription>
+              <CardDescription>
+                <h2>Average B cell count</h2>
+              </CardDescription>
               <CardTitle className="text-4xl font-semibold tabular-nums">
                 {data.avg_b_cell_male_responders.toFixed(2)}
               </CardTitle>
