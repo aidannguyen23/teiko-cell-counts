@@ -1,12 +1,9 @@
-import { lazy } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router'
 
 import { Layout } from '@/components/Layout'
+import Baseline from '@/pages/Baseline'
 import Overview from '@/pages/Overview'
-
-// these two pull in plotly (big) so only load them when you open the page
-const Stats = lazy(() => import('@/pages/Stats'))
-const Baseline = lazy(() => import('@/pages/Baseline'))
+import Stats from '@/pages/Stats'
 
 export default function App() {
   return (
@@ -15,7 +12,7 @@ export default function App() {
         <Route element={<Layout />}>
           <Route index element={<Overview />} />
           <Route path="stats" element={<Stats />} />
-          <Route path="baseline" element={<Baseline />} />
+          <Route path="subset" element={<Baseline />} />
         </Route>
       </Routes>
     </BrowserRouter>

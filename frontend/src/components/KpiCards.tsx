@@ -4,10 +4,10 @@ import { type Kpis, useApi } from '@/lib/api'
 import { fmtInt } from '@/lib/format'
 
 const ITEMS: { key: keyof Kpis; label: string; note: string }[] = [
-  { key: 'samples', label: 'Samples', note: 'all sample types + timepoints' },
-  { key: 'subjects', label: 'Subjects', note: 'unique patients' },
-  { key: 'projects', label: 'Projects', note: 'prj1, prj2, prj3' },
-  { key: 'responders', label: 'Responders', note: 'subjects w/ response = yes' },
+  { key: 'samples', label: 'Samples', note: 'Across all sample types and timepoints' },
+  { key: 'subjects', label: 'Subjects', note: 'Unique patients' },
+  { key: 'projects', label: 'Projects', note: 'prj1, prj2 and prj3' },
+  { key: 'responders', label: 'Responders', note: 'Subjects who responded to treatment' },
 ]
 
 export function KpiCards() {

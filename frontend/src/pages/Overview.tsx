@@ -8,12 +8,13 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, Download, Search } from 'lucide-react'
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
+import { KpiCards } from '@/components/KpiCards'
 import { ErrorNote, PageHeader, usePageTitle } from '@/components/Layout'
+import { Section } from '@/components/Section'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -52,21 +53,6 @@ const COLUMNS: ColumnDef<FrequencyRow>[] = [
   },
 ]
 
-function toCsv(rows: FrequencyRow[]) {
-  const header = 'sample,total_count,population,count,percentage'
-  const lines = rows.map((r) => [r.sample, r.total_count, r.population, r.count, r.percentage].join(','))
-  return [header, ...lines].join('\n')
-}
-
-function download(name: string, text: string) {
-  const url = URL.createObjectURL(new Blob([text], { type: 'text/csv' }))
-  const a = document.createElement('a')
-  a.href = url
-  a.download = name
-  a.click()
-  URL.revokeObjectURL(url)
-}
-
 export default function Overview() {
   const { data, error } = useApi<FrequencyRow[]>('/api/frequencies')
   const rows = useMemo(() => data ?? [], [data])
@@ -74,7 +60,7 @@ export default function Overview() {
   const [sorting, setSorting] = useState<SortingState>([])
   const [search, setSearch] = useState('')
   const [population, setPopulation] = useState('all')
-  usePageTitle('Overview')
+  usePageTitle('Data Overview')
 
   // has to be memoized. a new array every render makes the table think the filter
   // changed -> it resets the page -> rerender -> loop (this broke page navigation)
@@ -96,30 +82,35 @@ export default function Overview() {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    initialState: { pagination: { pageSize: 25 } },
+    initialState: { pagination: { pageSize: 10 } },
   })
 
   const filtered = table.getPrePaginationRowModel().rows
   const { pageIndex, pageSize } = table.getState().pagination
 
   return (
-    <section className="space-y-6">
+    <div className="space-y-6">
       <PageHeader
-        title="Cell population frequencies"
-        description="part 2: each row is one population in one sample. percentage = count / total cells in that sample."
+        title="Part 2: Initial Analysis - Data Overview"
+        description="A summary of the trial data and the relative frequency of each immune cell population in every sample."
       />
+
+      <KpiCards />
 
       {error && <ErrorNote message={error} />}
 
-      <Card>
-        <CardContent className="space-y-4">
+      <Section
+        title="Cell Population Frequencies"
+        description="Each row is one cell population in one sample. Percentage is the population's cell count divided by the total cell count of that sample."
+      >
+        <div className="space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="relative flex-1">
               <Search aria-hidden className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
-                aria-label="Search by sample id"
-                placeholder="search sample id"
+                aria-label="Search by sample ID"
+                placeholder="Search by sample ID"
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value)
@@ -147,20 +138,12 @@ export default function Overview() {
                 ))}
               </SelectContent>
             </Select>
-            <Button
-              variant="outline"
-              disabled={!filtered.length}
-              onClick={() => download('cell_frequencies.csv', toCsv(filtered.map((r) => r.original)))}
-            >
-              <Download aria-hidden />
-              Export CSV
-            </Button>
           </div>
 
           <div className="overflow-x-auto rounded-lg border">
             <Table>
               <caption className="sr-only">
-                cell population frequencies per sample. column headers are buttons that sort the table
+                Cell population frequencies per sample. Column headers are buttons that sort the table.
               </caption>
               <TableHeader>
                 {table.getHeaderGroups().map((hg) => (
@@ -215,7 +198,7 @@ export default function Overview() {
                 {data && !filtered.length && (
                   <TableRow>
                     <TableCell colSpan={COLUMNS.length} className="py-10 text-center text-muted-foreground">
-                      no rows match
+                      No rows match your search.
                     </TableCell>
                   </TableRow>
                 )}
@@ -226,22 +209,10 @@ export default function Overview() {
           <div className="flex flex-col items-center justify-between gap-3 text-sm text-muted-foreground sm:flex-row">
             <span aria-live="polite">
               {filtered.length
-                ? `${fmtInt(pageIndex * pageSize + 1)} to ${fmtInt(Math.min((pageIndex + 1) * pageSize, filtered.length))} of ${fmtInt(filtered.length)} rows`
+                ? `Showing ${fmtInt(pageIndex * pageSize + 1)} to ${fmtInt(Math.min((pageIndex + 1) * pageSize, filtered.length))} of ${fmtInt(filtered.length)} rows`
                 : '0 rows'}
             </span>
             <div className="flex items-center gap-2">
-              <Select value={String(pageSize)} onValueChange={(v) => table.setPageSize(Number(v))}>
-                <SelectTrigger size="sm" aria-label="Rows per page" className="w-28">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[10, 25, 50, 100].map((n) => (
-                    <SelectItem key={n} value={String(n)}>
-                      {n} / page
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
               <Button
                 variant="outline"
                 size="icon-sm"
@@ -252,7 +223,7 @@ export default function Overview() {
                 <ChevronLeft aria-hidden />
               </Button>
               <span className="tabular-nums">
-                page {pageIndex + 1} of {Math.max(table.getPageCount(), 1)}
+                Page {pageIndex + 1} of {Math.max(table.getPageCount(), 1)}
               </span>
               <Button
                 variant="outline"
@@ -265,8 +236,8 @@ export default function Overview() {
               </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
-    </section>
+        </div>
+      </Section>
+    </div>
   )
 }

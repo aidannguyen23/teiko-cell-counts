@@ -8,8 +8,7 @@ export default defineConfig({
   resolve: {
     alias: { '@': path.resolve(import.meta.dirname, './src') },
   },
-  // plotly is ~4.6mb no matter what, its lazy loaded on the chart pages
-  build: { chunkSizeWarningLimit: 5000 },
+  build: { chunkSizeWarningLimit: 600 },
   // npm run dev -> api calls go to the fastapi server
   server: {
     proxy: { '/api': 'http://localhost:8000' },
