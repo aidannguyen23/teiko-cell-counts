@@ -120,11 +120,6 @@ function Boxplots({ rows, stats }: { rows: BoxplotRow[]; stats: StatsRow[] }) {
           )
         })}
       </div>
-      <p className="text-xs text-muted-foreground">
-        Boxes span the first to third quartile with a line at the median. Whiskers extend to the most extreme values
-        within 1.5 times the interquartile range, and points beyond them are shown individually. Hover over or tab to a
-        box for exact values.
-      </p>
     </div>
   )
 }
