@@ -1,6 +1,6 @@
 # Loblaw Bio: Miraclib Trial Analysis
 
-Pipeline + dashboard for the Teiko cell-count take-home. Loads `cell-count.csv` into SQLite, computes per-sample cell population frequencies, compares responders vs non-responders, and summarizes the baseline subset.
+Pipeline + dashboard for Loblaw Bio's miraclib trial cell-count data (Teiko). Loads `cell-count.csv` into SQLite, computes per-sample cell population frequencies, compares responders vs non-responders, and summarizes the baseline subset.
 
 ## Running it (GitHub Codespaces)
 
